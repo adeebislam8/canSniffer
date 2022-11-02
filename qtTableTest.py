@@ -1,9 +1,6 @@
-from nis import match
-from sqlite3 import DatabaseError
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QTableWidgetItem
-# from PyQt5.QtCore import Qt
-from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal
 from sniffer_ui import Ui_MainWindow
 import sys
 import logging
@@ -21,7 +18,9 @@ CAN2:   ID: 0x101  LEN: 8  DATA: 6 4 0 21 0 0 17 8   TS: 29891
 CAN1:   ID: 0x383  LEN: 8  DATA: 5 3 164 127 130 0 0 12   TS: 58393
 
             '''
-file1 = open("/home/adeeb/canSnifffer/CAN_Log.txt", "r")
+
+
+file1 = open("CAN_Log.txt", "r")
 if file1:
     logging.debug("Reading from file")
     txt = file1.read()
@@ -30,15 +29,18 @@ if file1:
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)  
 
-# logging.debug("print message!!!")
 
-# app = QApplication([])
-# window = QTableWidget()
-# window.
-# window.show()
-# app.exec()
+
+#   FEATURES TO INCLUDE
+    #   DOES SERIAL READING
+    #   PAUSE PARSING
+    #   ADD A 2 TEXT INPUTS AND BUTTON WHICH WILL CREATE A GATEWAY -> PHYSICAL CORRESPONDANCE TABLE
+    #  
+
+
 
 class parserWorker(QObject):
+
     parsedLineSignal = pyqtSignal([list])
     finishedSignal = pyqtSignal()
 
@@ -48,13 +50,15 @@ class parserWorker(QObject):
 
         for line in lines:
             logging.debug(line)
-            time.sleep(0.5)
+            time.sleep(0.1)
             self.parseLine(line)
 
         self.finishedSignal.emit()
 
     def parseLine(self, line):
+
         words = line.split()
+        
         if line.startswith('CAN1'):     #TABLE FOR CANID
 
             ID = str(words[2])
@@ -78,9 +82,8 @@ class parserWorker(QObject):
             self.parsedLineSignal.emit(self.rowData)
 
 
-        
+# THIS CLASS HANDLES THE GUI        
 class window(QtWidgets.QMainWindow):
-    # parseLineSignal = pyqtSignal()
 
     def __init__(self):
         super(window, self).__init__()
@@ -199,11 +202,11 @@ class window(QtWidgets.QMainWindow):
 
 def create_app():
     app = QApplication(sys.argv)
+
     win = window()
     win.show()
  
     app.exec_()
 
-    # sys.exit(app.exec_())
 
 create_app()
