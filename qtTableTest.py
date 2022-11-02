@@ -1,6 +1,6 @@
 from nis import match
 from sqlite3 import DatabaseError
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QApplication, QTableWidgetItem
 # from PyQt5.QtCore import Qt
 from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal, QTimer
@@ -21,6 +21,11 @@ CAN2:   ID: 0x101  LEN: 8  DATA: 6 4 0 21 0 0 17 8   TS: 29891
 CAN1:   ID: 0x383  LEN: 8  DATA: 5 3 164 127 130 0 0 12   TS: 58393
 
             '''
+file1 = open("/home/adeeb/canSnifffer/CAN_Log.txt", "r")
+if file1:
+    logging.debug("Reading from file")
+    txt = file1.read()
+
 
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.DEBUG)  
@@ -43,7 +48,7 @@ class parserWorker(QObject):
 
         for line in lines:
             logging.debug(line)
-            time.sleep(1)
+            time.sleep(0.5)
             self.parseLine(line)
 
         self.finishedSignal.emit()
@@ -82,9 +87,14 @@ class window(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.tableWidget.setColumnCount(3)
+        self.ui.tableWidget.setColumnWidth(1,550)
+        self.ui.tableWidget.setColumnWidth(2,150)
         self.ui.tableWidget.setHorizontalHeaderLabels(('ID','DATA','TS'))
 
+
         self.ui.tableWidget_2.setColumnCount(3)
+        self.ui.tableWidget_2.setColumnWidth(1,550)
+        self.ui.tableWidget_2.setColumnWidth(2,150)
         self.ui.tableWidget_2.setHorizontalHeaderLabels(('ID','DATA','TS'))
 
         self.parserThread = QThread()
@@ -122,7 +132,12 @@ class window(QtWidgets.QMainWindow):
 
                     self.ui.tableWidget.setItem(rowIdx,1, QTableWidgetItem(DATA))
                     self.ui.tableWidget.setItem(rowIdx,2, QTableWidgetItem(TS))
-                    time.sleep(1)
+
+                    item = self.ui.tableWidget.item(rowIdx, 0)
+                    self.ui.tableWidget.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
+                    self.ui.tableWidget.selectRow(rowIdx)
+
+                    # time.sleep(1)
                     logging.debug(ID)
 
                 else:
@@ -134,7 +149,11 @@ class window(QtWidgets.QMainWindow):
                     self.ui.tableWidget.setItem(rowCount,0, QTableWidgetItem(ID))
                     self.ui.tableWidget.setItem(rowCount,1, QTableWidgetItem(DATA))
                     self.ui.tableWidget.setItem(rowCount,2, QTableWidgetItem(TS))
-            
+                    
+                    item = self.ui.tableWidget.item(rowCount, 0)
+                    self.ui.tableWidget.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
+                    self.ui.tableWidget.selectRow(rowCount)
+                    
         if line[0] == 'GATEWAY':
                 ID = line[1]
                 DATA = line[2]
@@ -155,7 +174,12 @@ class window(QtWidgets.QMainWindow):
 
                     self.ui.tableWidget_2.setItem(rowIdx,1, QTableWidgetItem(DATA))
                     self.ui.tableWidget_2.setItem(rowIdx,2, QTableWidgetItem(TS))
-                    time.sleep(1)
+
+                    item = self.ui.tableWidget_2.item(rowIdx, 0)
+                    self.ui.tableWidget_2.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
+                    self.ui.tableWidget_2.selectRow(rowIdx)
+
+                    # time.sleep(1)
 
                     logging.debug(ID)
 
@@ -168,7 +192,11 @@ class window(QtWidgets.QMainWindow):
                     self.ui.tableWidget_2.setItem(rowCount,0, QTableWidgetItem(ID))
                     self.ui.tableWidget_2.setItem(rowCount,1, QTableWidgetItem(DATA))
                     self.ui.tableWidget_2.setItem(rowCount,2, QTableWidgetItem(TS))
-    
+
+                    item = self.ui.tableWidget_2.item(rowCount, 0)
+                    self.ui.tableWidget_2.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
+                    self.ui.tableWidget_2.selectRow(rowCount)
+
 def create_app():
     app = QApplication(sys.argv)
     win = window()
