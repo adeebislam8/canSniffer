@@ -5,7 +5,7 @@ from sniffer_ui import Ui_MainWindow
 import sys
 import logging
 import time
-sys.path.insert(0, '/home/adeeb/')
+# sys.path.insert(0, '/home/adeeb/')
 from serialTransmission import serialReader
 
 txt = '''
