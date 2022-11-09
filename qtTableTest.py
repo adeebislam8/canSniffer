@@ -5,6 +5,8 @@ from sniffer_ui import Ui_MainWindow
 import sys
 import logging
 import time
+sys.path.insert(0, '/home/adeeb/')
+from serialTransmission import serialReader
 
 txt = '''
 CAN1:   ID: 0x502  LEN: 4  DATA: 0 0 0 0 0 64 0 128   TS: 58306
@@ -20,10 +22,10 @@ CAN1:   ID: 0x383  LEN: 8  DATA: 5 3 164 127 130 0 0 12   TS: 58393
             '''
 
 
-file1 = open("CAN_Log.txt", "r")
-if file1:
-    logging.debug("Reading from file")
-    txt = file1.read()
+# file1 = open("CAN_Log.txt", "r")
+# if file1:
+#     logging.debug("Reading from file")
+#     txt = file1.read()
 
 
 
@@ -44,7 +46,7 @@ class parserWorker(QObject):
     parsedLineSignal = pyqtSignal([list])
     finishedSignal = pyqtSignal()
 
-    def loadData(self):
+    def loadTxtData(self):
 
         lines = txt.split('\n')
 
@@ -55,10 +57,26 @@ class parserWorker(QObject):
 
         self.finishedSignal.emit()
 
+    def connectToSerialCom(self):
+        self.canCom = serialReader.arduinoComm()
+        while self.canCom.commStart:
+            self.loadSerialData()
+
+    def loadSerialData(self):
+        if self.canCom.commStart:
+            print("Parsing Serial Line")
+            line = self.canCom.readCanLine()
+            print("Check line: ", line)
+            self.parseLine(line)
+        
+        else:
+            print("Port not open. Closing")
+            self.finishedSignal.emit()
+
     def parseLine(self, line):
 
         words = line.split()
-        
+        print("Parsed Line: ", words)
         if line.startswith('CAN1'):     #TABLE FOR CANID
 
             ID = str(words[2])
@@ -103,9 +121,12 @@ class window(QtWidgets.QMainWindow):
         self.parserThread = QThread()
         self.parserObject = parserWorker()
         self.parserObject.moveToThread(self.parserThread)
-        self.parserThread.started.connect(self.parserObject.loadData)
-        self.parserObject.finishedSignal.connect(self.parserThread.quit)
 
+        # self.parserThread.started.connect(self.parserObject.loadTxtData)
+        
+        self.parserThread.started.connect(self.parserObject.connectToSerialCom)
+
+        self.parserObject.finishedSignal.connect(self.parserThread.quit)
         self.parserObject.parsedLineSignal.connect(self.updateTableRow)
 
         self.parserThread.start()
