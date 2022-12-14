@@ -20,12 +20,12 @@
       <x>220</x>
       <y>140</y>
       <width>2741</width>
-      <height>1711</height>
+      <height>821</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QTableWidget" name="tableWidget_2">
+      <widget class="QTableWidget" name="tableWidgetGateway">
        <property name="autoScroll">
         <bool>false</bool>
        </property>
@@ -59,7 +59,7 @@
    <widget class="QLabel" name="label_2">
     <property name="geometry">
      <rect>
-      <x>1180</x>
+      <x>1620</x>
       <y>50</y>
       <width>271</width>
       <height>61</height>
@@ -68,6 +68,35 @@
     <property name="text">
      <string>CAN TABLE</string>
     </property>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>1050</y>
+      <width>2741</width>
+      <height>821</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QTableWidget" name="tableWidgetIsolatedGateway">
+       <property name="autoScroll">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QTableWidget" name="tableWidgetIsolatedCAN">
+       <property name="horizontalScrollBarPolicy">
+        <enum>Qt::ScrollBarAlwaysOn</enum>
+       </property>
+       <property name="autoScroll">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QTableWidgetItem, QPushButton
 from PyQt5.QtCore import Qt, QObject, QThread, pyqtSignal
 from PyQt5 import QtGui
 from sniffer_ui import Ui_MainWindow
@@ -46,6 +46,7 @@ class parserWorker(QObject):
 
     parsedLineSignal = pyqtSignal([list])
     finishedSignal = pyqtSignal()
+
 
     def loadTxtData(self):
 
@@ -102,8 +103,13 @@ class parserWorker(QObject):
 
             self.parsedLineSignal.emit(self.rowData)
 
+# THIS CLASS HANDLES THE GUI  
+# 
+# // Add isolated tablegateway and isolated tableCAN (done)
+# // Add a button to add a row to the isolated tablegateway (TODO button not appearing)
+# // Add a button to add a row to the isolated tableCAN (TODO button not appearing)
+# // use self.ui.tableWidgetIsoltaedGateway.setItem(row, col, self.ui.tableWidgetGateway.item(row, col)))     (done)
 
-# THIS CLASS HANDLES THE GUI        
 class window(QtWidgets.QMainWindow):
 
     def __init__(self):
@@ -111,6 +117,16 @@ class window(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.tableWidget.setColumnCount(10)
+        self.ui.tableWidget.itemClicked.connect(self.getTableClickCAN)
+
+        self.ui.addGatewayButton = QPushButton("Add Gateway")
+        self.ui.addCANButton = QPushButton("Add CAN")
+
+        self.ui.addGatewayButton.clicked.connect(self.addGatewayRow)
+        self.ui.addCANButton.clicked.connect(self.addCANRow)
+
+        self.selectedRow = None
+
         for i in range(8):
             # self.ui.tableWidget.setColumnWidth(1,150)
             self.ui.tableWidget.setColumnWidth(i+1,50)
@@ -119,15 +135,17 @@ class window(QtWidgets.QMainWindow):
         self.ui.tableWidget.setHorizontalHeaderLabels(('ID','D[0]', 'D[1]','D[2]','D[3]','D[4]','D[5]','D[6]','D[7]','TS'))
 
 
-        self.ui.tableWidget_2.setColumnCount(10)
+        self.ui.tableWidgetGateway.setColumnCount(10)
+        self.ui.tableWidgetGateway.itemClicked.connect(self.getTableClickGateway)
+
         for i in range(8):
             # self.ui.tableWidget.setColumnWidth(1,150)
-            self.ui.tableWidget_2.setColumnWidth(i+1,50)
+            self.ui.tableWidgetGateway.setColumnWidth(i+1,50)
 
-        # self.ui.tableWidget_2.setColumnWidth(1,150)
-        # self.ui.tableWidget_2.setColumnWidth(2,150)
-        self.ui.tableWidget_2.setHorizontalHeaderLabels(('ID','D[0]', 'D[1]','D[2]','D[3]','D[4]','D[5]','D[6]','D[7]','TS'))
-        # self.ui.tableWidget_2.setHorizontalHeaderLabels(('ID','DATA','TS'))
+        # self.ui.tableWidgetGateway.setColumnWidth(1,150)
+        # self.ui.tableWidgetGateway.setColumnWidth(2,150)
+        self.ui.tableWidgetGateway.setHorizontalHeaderLabels(('ID','D[0]', 'D[1]','D[2]','D[3]','D[4]','D[5]','D[6]','D[7]','TS'))
+        # self.ui.tableWidgetGateway.setHorizontalHeaderLabels(('ID','DATA','TS'))
 
         self.parserThread = QThread()
         self.parserObject = parserWorker()
@@ -143,36 +161,73 @@ class window(QtWidgets.QMainWindow):
         self.parserThread.start()
     
 
+    def getTableClickCAN(self, item):
+        print("Table Clicked")
+        self.row = item.row()
+        self.col = item.column()
+        self.text = item.text()
+        self.selectedRow = self.row
+        print("Row: ", self.row, "Col: ", self.col, "Text: ", self.text)
+        self.rowData = [self.row, self.col, self.text]
+        # self.ui.tableWidgetGateway.selectRow(self.row)
+
+        self.parserObject.parsedLineSignal.emit(self.rowData)
+
+
+    def getTableClickGateway(self, item):
+        print("Table Clicked")
+        self.row = item.row()
+        self.col = item.column()
+        self.text = item.text()
+        self.selectedRow = self.row
+
+        print("Row: ", self.row, "Col: ", self.col, "Text: ", self.text)
+        self.rowData = [self.row, self.col, self.text]
+        # highlight the row
+        # self.ui.tableWidgetGateway.selectRow(self.row)
+        self.parserObject.parsedLineSignal.emit(self.rowData)
+
+    def addGatewayRow(self):
+        self.ui.tableWidgetIsolatedGateway.insertRow(self.ui.tableWidgetIsolatedGateway.rowCount())
+        for i in range(10):
+            self.ui.tableWidgetIsolatedGateway.setItem(self.ui.tableWidgetIsolatedGateway.rowCount()-1, i, self.ui.tableWidgetGateway.item(self.ui.tableWidgetGateway.rowCount()-1, i).text())
+
+    def addCANRow(self):
+        self.ui.tableWidgetIsolatedCAN.insertRow(self.ui.tableWidgetIsolatedCAN.rowCount())
+        for i in range(10):
+            self.ui.tableWidgetIsolatedCAN.setItem(self.ui.tableWidgetIsolatedCAN.rowCount()-1, i, self.ui.tableWidget.item(self.ui.tableWidget.rowCount()-1, i).text())
+
+
     def compareRowData(self,tableWidget, rowIdx, DATA):
         for i in range(8):
-            print("Checking: ", tableWidget.item(rowIdx, i+1).text(), DATA[i])
+            # print("Checking: ", tableWidget.item(rowIdx, i+1).text(), DATA[i])
             if tableWidget.item(rowIdx, i+1).text() > DATA[i]:
                 tableWidget.setItem(rowIdx, i+1, QtWidgets.QTableWidgetItem(DATA[i]))
                 tableWidget.item(rowIdx, i+1).setBackground(QtGui.QColor(255,0,0))
-                print("RED")
+                # print("RED")
             elif tableWidget.item(rowIdx, i+1).text() < DATA[i]:
                 tableWidget.setItem(rowIdx, i+1, QtWidgets.QTableWidgetItem(DATA[i]))
                 tableWidget.item(rowIdx, i+1).setBackground(QtGui.QColor(0,255,0))
 
-                print("GREEN")
+                # print("GREEN")
             else:
                 tableWidget.setItem(rowIdx, i+1, QtWidgets.QTableWidgetItem(DATA[i]))
                 tableWidget.item(rowIdx, i+1).setBackground(QtGui.QColor(0,181,226))
 
                 # print("WHITE")
-                print("BLUE")
+                # print("BLUE")
             # self.ui.tableWidget.setItem(rowIdx, i+1, QtWidgets.QTableWidgetItem(str(DATA[i])))
 
     def updateTableRow(self, line):
 
         # logging.debug("Received Parsed Line Signal")
-        logging.debug(line)
+        # logging.debug(line)
 
 
         if line[0] == 'CAN':
                 ID = line[1]
                 DATA = line[2]
-                print(DATA[0])
+                # print(DATA[0])
                 TS = line[3]
                 # dataList = DATA.split('\'')
 
@@ -190,7 +245,7 @@ class window(QtWidgets.QMainWindow):
                     self.ui.tableWidget.setCurrentItem(matchingItem[0])
 
                     rowIdx = self.ui.tableWidget.currentRow()
-                    logging.debug(rowIdx)   
+                    # logging.debug(rowIdx)   
 
                     self.compareRowData(self.ui.tableWidget, rowIdx, DATA)
                     # for i in range(8):
@@ -234,7 +289,7 @@ class window(QtWidgets.QMainWindow):
                 # dataList = DATA.split(',')
                 # print(dataList)
 
-                matchingItem = self.ui.tableWidget_2.findItems(ID,Qt.MatchContains)
+                matchingItem = self.ui.tableWidgetGateway.findItems(ID,Qt.MatchContains)
 
                 # logging.debug(matchingItem)
 
@@ -242,27 +297,27 @@ class window(QtWidgets.QMainWindow):
                     # logging.debug("Found matching Item")
                     # logging.debug(matchingItem[0])
 
-                    self.ui.tableWidget_2.setCurrentItem(matchingItem[0])
+                    self.ui.tableWidgetGateway.setCurrentItem(matchingItem[0])
 
-                    rowIdx = self.ui.tableWidget_2.currentRow()
+                    rowIdx = self.ui.tableWidgetGateway.currentRow()
                     # logging.debug(rowIdx)
-                    data = self.ui.tableWidget_2.item(rowIdx, 2)
+                    data = self.ui.tableWidgetGateway.item(rowIdx, 2)
                     # print()
-                    logging.debug("DATA")
-                    logging.debug(data.text())
+                    # logging.debug("DATA")
+                    # logging.debug(data.text())
 
 
-                    self.compareRowData(self.ui.tableWidget_2,rowIdx, DATA)
+                    self.compareRowData(self.ui.tableWidgetGateway,rowIdx, DATA)
 
                     # for i in range(8):
-                    #     self.ui.tableWidget_2.setItem(rowIdx, i+1, QtWidgets.QTableWidgetItem(str(DATA[i])))
+                    #     self.ui.tableWidgetGateway.setItem(rowIdx, i+1, QtWidgets.QTableWidgetItem(str(DATA[i])))
                     
-                    # self.ui.tableWidget_2.setItem(rowIdx,1, QTableWidgetItem(DATA))
-                    self.ui.tableWidget_2.setItem(rowIdx,9, QTableWidgetItem(TS))
+                    # self.ui.tableWidgetGateway.setItem(rowIdx,1, QTableWidgetItem(DATA))
+                    self.ui.tableWidgetGateway.setItem(rowIdx,9, QTableWidgetItem(TS))
 
-                    item = self.ui.tableWidget_2.item(rowIdx, 0)
-                    # self.ui.tableWidget_2.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
-                    # self.ui.tableWidget_2.selectRow(rowIdx)
+                    item = self.ui.tableWidgetGateway.item(rowIdx, 0)
+                    # self.ui.tableWidgetGateway.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
+                    # self.ui.tableWidgetGateway.selectRow(rowIdx)
 
                     # time.sleep(1)
 
@@ -271,20 +326,20 @@ class window(QtWidgets.QMainWindow):
                 else:
                     # logging.debug("Didnt find matching Item")
 
-                    rowCount = self.ui.tableWidget_2.rowCount()
+                    rowCount = self.ui.tableWidgetGateway.rowCount()
                     # print(rowCount)
-                    self.ui.tableWidget_2.insertRow(rowCount)
-                    self.ui.tableWidget_2.setItem(rowCount,0, QTableWidgetItem(ID))
+                    self.ui.tableWidgetGateway.insertRow(rowCount)
+                    self.ui.tableWidgetGateway.setItem(rowCount,0, QTableWidgetItem(ID))
 
                     for i in range(8):
-                        self.ui.tableWidget_2.setItem(rowCount, i+1, QtWidgets.QTableWidgetItem(str(DATA[i])))
-                    # self.ui.tableWidget_2.setItem(rowCount,1, QTableWidgetItem(DATA))
+                        self.ui.tableWidgetGateway.setItem(rowCount, i+1, QtWidgets.QTableWidgetItem(str(DATA[i])))
+                    # self.ui.tableWidgetGateway.setItem(rowCount,1, QTableWidgetItem(DATA))
 
-                    self.ui.tableWidget_2.setItem(rowCount,9, QTableWidgetItem(TS))
+                    self.ui.tableWidgetGateway.setItem(rowCount,9, QTableWidgetItem(TS))
 
-                    item = self.ui.tableWidget_2.item(rowCount, 0)
-                    # self.ui.tableWidget_2.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
-                    # self.ui.tableWidget_2.selectRow(rowCount)
+                    item = self.ui.tableWidgetGateway.item(rowCount, 0)
+                    # self.ui.tableWidgetGateway.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtTop)
+                    # self.ui.tableWidgetGateway.selectRow(rowCount)
 
 def create_app():
     app = QApplication(sys.argv)
